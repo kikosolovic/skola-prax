@@ -27,7 +27,7 @@ object server extends App {
       path("search"){
         get {
           parameters("query".as[String]) {query =>
-//            complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Results for $query"))
+            //            complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Results for $query"))
             val requestParams = Map(
               "query" -> s"$query",
               "sort" -> "relevance",
@@ -44,43 +44,13 @@ object server extends App {
               ))
 
             val performRequestFut = for {
-                response <- Http().singleRequest(request)
-                body <- Unmarshal(response.entity).to[String]
-                _ = response.entity.discardBytes()
-              } yield (body)
-//              println(s"status: $status, body: $body")
+              response <- Http().singleRequest(request)
+              body <- Unmarshal(response.entity).to[String]
+              _ = response.entity.discardBytes()
+            } yield (body)
             Await.ready(performRequestFut, Duration.Inf)
-//            val res = performRequestFut[2]
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Results for ${performRequestFut.value}"))
-//            performRequestFut.onComplete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Results for $performRequestFut.")   )
 
-
-
-
-//
-          }
-        }
-      },
-
-
-
-
-
-      path("hello_to") {
-        get {
-          parameters("name".as[String]) { name =>
-            complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Hello to $name"))
-          }
-        }
-      },
-
-      path("hello") {
-        get {
-          onComplete(Future {
-            "ourString"
-          }) {
-            case Success(value) => complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Hello to everyone"))
-            case Failure(exception) => complete(InternalServerError, s"An error occurred: ${exception.getMessage}")
           }
         }
       },
@@ -88,25 +58,10 @@ object server extends App {
         get {
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Response from server"))
         }
-      },
-      pathPrefix("user" / LongNumber)( userId => concat(
-        pathEndOrSingleSlash {
-          get {
-            complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"user detail of user $userId"))
-          }
-        },
-        path("delete") {
-          decodeRequest {
-            post {
-              entity(as[String]) { ent: String =>
-                complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"deleting user $userId with params $ent"))
-              }
-            }
-          }
-        }
-      ))
-    )
+      })
   }
+
+
   val bindingFut = for {
     binding <- Http().newServerAt("localhost", 8080).bind(route)
     _ = println(s"Server running on ${binding.localAddress.getHostName}:${binding.localAddress.getPort}")
