@@ -11,12 +11,12 @@ import scala.concurrent.duration.Duration
 import spray.json._
 import DefaultJsonProtocol._
 
-case class Items(title: String, thumbnailImageUrl: String, originalImageUrl: String, height: Int, width: Int, contextLink: String)
-case class Response(status: String, estimatedResultCount: Int, items: Items)
+case class Items(originalImageUrl: String, title:String)
+case class Response(status: String, items: List[Items])
 
 object ResponseJsonProtocol extends DefaultJsonProtocol {
-  implicit val itemsFormat: RootJsonFormat[Items] = jsonFormat6(Items)
-  implicit val responseFormat: RootJsonFormat[Response] = jsonFormat3(Response)
+  implicit val itemsFormat: RootJsonFormat[Items] = jsonFormat2(Items)
+  implicit val responseFormat: RootJsonFormat[Response] = jsonFormat2(Response)
 }
 
 object server extends App {
@@ -43,10 +43,10 @@ object server extends App {
           val request = HttpRequest(
             method = HttpMethods.GET,
             uri = s"https://google-search72.p.rapidapi.com/imagesearch?$requestParams",
-            headers = List(
-              RawHeader("X-RapidAPI-Key", "0b031cc79bmshe8e881b4ca3d931p1d4e40jsn4142da721e80"),
+            headers = Seq(
+              RawHeader("X-RapidAPI-Key", "047da99f91msh1522bafa8d4de44p110a3fjsnf98ee48980b7"),
               RawHeader("X-RapidAPI-Host", "google-search72.p.rapidapi.com")
-            )
+            ),
           )
 
           val performRequestFut = for {
@@ -59,8 +59,8 @@ object server extends App {
               println("doslo sem,")
 //              tu to skonci neviempreco
               val response : Response = result.parseJson.convertTo[Response]
-              QueryDBSetup.ServerInsert(query,"response.items.originalImageUrl" )
-              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Look at ${response.items.title} image at this link   ${response.items.originalImageUrl}"))
+              QueryDBSetup.ServerInsert(query,response.items.head.originalImageUrl )
+              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"Look at <${response.items.head.title}> image at this link   <${response.items.head.originalImageUrl}>"))
             case Failure(exception) =>
               println("mega gay")
               complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "supergay"))
